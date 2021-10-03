@@ -13,43 +13,18 @@ app.use(cors())
 app.use(morgan('tiny'))
 
 
-let persons = [
-    {
-        "id": 1,
-        "name": "Arto Hellas",
-        "number": "040-123456"
-    },
-    {
-        "id": 2,
-        "name": "Ada Lovelace",
-        "number": "39-44-5323523"
-    },
-    {
-        "id": 3,
-        "name": "Dan Abramov",
-        "number": "12-43-234345"
-    },
-    {
-        "id": 4,
-        "name": "Mary Poppendieck",
-        "number": "11-22-3344556"
-    },
-    {
-        "name": "Gabriel Rodríguez",
-        "number": "111-111-111",
-        "id": 5
-    }
-]
-
 app.get('/', (request, response) => {
     response.send('<h1>Hello World!</h1>')
 })
 
 app.get('/info', (request, response) => {
-    response.send(`
-        <p>Phonebook has ${persons.length} entries</p>
+    Person.find({}).then(people => {
+        response.send(`
+        <p>Phonebook has ${people.length} entries</p>
         <h4>${new Date()}</h4>
     `)
+    })
+
 })
 
 app.get('/api/persons', (request, response) => {
