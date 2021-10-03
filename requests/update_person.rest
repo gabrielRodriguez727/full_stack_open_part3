@@ -1,0 +1,19 @@
+//Update person
+PUT http://localhost:3001/api/persons/6158a5fa7732abf094d15538 HTTP/1.1
+content-type: application/json
+
+{
+    "name": "Gabriel Rodriguez",
+    "number": "111-111-111"
+}
+
+
+###
+//Error: Name and number validation
+PUT http://localhost:3001/api/persons/6158a5fa7732abf094d15538 HTTP/1.1
+content-type: application/json
+
+{
+    "name": "Ga",
+    "number":"123"
+}

@@ -1,8 +1,12 @@
-const express = require('express')
-const cors = require('cors')
-const morgan = require('morgan')
-const app = express()
+import "dotenv/config";
+import express from "express";
+import morgan from "morgan";
+import cors from "cors";
+//import errorHandler from "./middlewares/errorHandler.js";
+//import uknowEndpoint from "./middlewares/uknowEndpoint.js";
+import Person from "./models/person.js";
 
+const app = express()
 app.use(express.json())
 app.use(express.static('build'))
 app.use(cors())
@@ -49,64 +53,73 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({}).then(people => {
+        response.json(people)
+    })
 })
 
-app.get('/api/persons/:id', (request, response) => {
+app.get('/api/persons/:id', (request, response, next) => {
     const id = Number(request.params.id)
-    const person = persons.find(person => person.id === id)
-    response.json(person)
-})
-
-app.delete('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    persons = persons.filter(person => person.id !== id)
-
-    response.status(204).end()
-})
-
-app.put('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const body = request.body
-    let errorMessages = []
-    if (!body.number) errorMessages.push('Number is missing')
-
-    if (errorMessages.length) {
-        return response.status(400).json({
-            error: errorMessages.join('; ')
+    Person.findById(request.params.id)
+        .then(person => {
+            if (person) {
+                response.json(person)
+            } else {
+                response.status(404).end()
+            }
         })
-    }
-    const personToUpdate = persons.find(e => e.id === id)
-    personToUpdate.number = body.number
-    persons = persons.map(e => (e.id === id) ? personToUpdate : e)
-
-    response.json(personToUpdate)
+        .catch((error) => next(error));
 })
 
-app.post('/api/persons', (request, response) => {
-    const body = request.body
-
-    let errorMessages = []
-    if (!body.name) errorMessages.push('Name is missing')
-    if (body.name && persons.some(e => e.name === body.name)) errorMessages.push('Name must be unique')
-    if (!body.number) errorMessages.push('Number is missing')
-
-    if (errorMessages.length) {
-        return response.status(400).json({
-            error: errorMessages.join('; ')
+app.delete("/api/persons/:id", (request, response, next) => {
+    const id = request.params.id;
+    Person.findOneAndDelete(id)
+        .then(() => {
+            response.status(204).end();
         })
-    }
+        .catch((error) => next(error));
+});
 
-    const person = {
-        name: body.name,
-        number: body.number,
-        id: generateId(),
-    }
+app.put("/api/persons/:id", (request, response, next) => {
+    const id = request.params.id;
+    const body = request.body
+    console.log(request.body)
+    const opts = {
+        new: true,
+        runValidators: true,
+        context: "query",
+    };
+    Person.findByIdAndUpdate(id, body, opts)
+        .then((result) => {
+            console.log('1-', { result })
+            response.status(200).json(result);
+        })
+        .catch((error) => next(error));
+});
 
-    persons = persons.concat(person)
-
-    response.json(person)
+app.post('/api/persons', (request, response, next) => {
+    const body = request.body
+    const person = new Person({ ...body })
+    person
+        .save()
+        .then(savedPerson => savedPerson.toJSON())
+        .then(savedAndFormattedPerson => {
+            response.json(savedAndFormattedPerson)
+        })
+        .catch(error => next(error))
 })
+
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+    if (error.name === 'CastError') {
+        return response.status(400).send({ error: 'malformatted id' })
+    } else if (error.name === 'ValidationError') {
+        return response.status(400).json({ error: error.message })
+    }
+    next(error)
+}
+
+app.use(errorHandler)
 
 const unknownEndpoint = (request, response) => {
     response.status(404).send({ error: 'unknown endpoint' })
@@ -114,15 +127,7 @@ const unknownEndpoint = (request, response) => {
 
 app.use(unknownEndpoint)
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
-
-
-const generateId = () => {
-    const maxId = persons.length > 0
-        ? Math.max(...persons.map(e => e.id))
-        : 0
-    return maxId + 1
-}

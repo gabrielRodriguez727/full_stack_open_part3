@@ -1,0 +1,10 @@
+//Get all people
+GET http://localhost:3001/api/persons
+
+###
+//Get by id
+GET  http://localhost:3001/api/persons/6158a5fa7732abf094d15538
+
+###
+//Error: Get by id
+GET  http://localhost:3001/api/persons/6158a5fa7732ab

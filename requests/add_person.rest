@@ -1,3 +1,4 @@
+//Add person
 POST http://localhost:3001/api/persons/ HTTP/1.1
 content-type: application/json
 
@@ -7,10 +8,20 @@ content-type: application/json
 }
 
 ###
+//Error: Name and number required
 POST http://localhost:3001/api/persons/ HTTP/1.1
 content-type: application/json
 
 {
-    "name": "Manuel Sergei"
+    
 }
 
+###
+//Error: Number validation
+POST http://localhost:3001/api/persons/ HTTP/1.1
+content-type: application/json
+
+{
+    "name": "Manuel Sergei",
+    "number": "1"
+}
